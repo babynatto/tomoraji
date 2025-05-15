@@ -9,10 +9,32 @@
     <p>This is my first website.</p>
     <button onclick="sayHi()">Click Me!</button>
 
+    <script>
+      let mediaRecorder;
+      let audioStream;
+      function startStreaming() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            audioStream = stream;
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = (event) => {
+              if (event.data.size > 0) {
+                // Placeholder: simulate streaming
+                console.log("Streaming audio chunk:", event.data);
+                // Here, you could send data to a server using WebSocket, etc.
+              }
+            };
+
+            mediaRecorder.start(1000); // Collect 1 second of audio chunks
+            console.log("Live audio streaming started.");
+          })
+          .catch(err => {
+            console.error("Microphone access denied or error:", err);
+          });
+      }
+    
 <script>
-  function sayHi() {
-    alert("You clicked the button!");
-  }
 </script>
   </body>
 </html>
