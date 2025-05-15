@@ -7,34 +7,51 @@
   <body>
     <h1>Hello, world!</h1>
     <p>This is my first website.</p>
-    <button onclick="sayHi()">Click Me!</button>
+    <button onclick="startStreaming()">Stream Live Audio</button>
+    <button onclick="stopStreaming()">Stop</button>
 
     <script>
       let mediaRecorder;
       let audioStream;
+      let socket;
+
       function startStreaming() {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(stream => {
-            audioStream = stream;
-            mediaRecorder = new MediaRecorder(stream);
+        socket = new WebSocket('ws://localhost:8080'); // Replace with your server URL
 
-            mediaRecorder.ondataavailable = (event) => {
-              if (event.data.size > 0) {
-                // Placeholder: simulate streaming
-                console.log("Streaming audio chunk:", event.data);
-                // Here, you could send data to a server using WebSocket, etc.
-              }
-            };
+        socket.onopen = () => {
+          console.log('WebSocket connected');
 
-            mediaRecorder.start(1000); // Collect 1 second of audio chunks
-            console.log("Live audio streaming started.");
-          })
-          .catch(err => {
-            console.error("Microphone access denied or error:", err);
-          });
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+              audioStream = stream;
+              mediaRecorder = new MediaRecorder(stream);
+
+              mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                  socket.send(event.data); // Send audio blob to server
+                  console.log('Sent audio chunk');
+                }
+              };
+
+              mediaRecorder.start(1000); // Send audio every second
+              console.log("Live audio streaming started.");
+            })
+            .catch(err => {
+              console.error("Microphone error:", err);
+            });
+        };
       }
-    
-<script>
-</script>
+
+      function stopStreaming() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+          audioStream.getTracks().forEach(track => track.stop());
+        }
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+        console.log("Streaming stopped.");
+      }
+    </script>
   </body>
 </html>
