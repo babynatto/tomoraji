@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DJ Audio Interface Stream</title>
+</head>
+<body>
+  <h2>DJ Audio Input Control</h2>
+  <button id="start-button">Start Audio</button>
+  <button id="stop-button" disabled>Stop Audio</button>
+
+  <script>
+    let stream = null;
+    let audioContext = null;
+    let source = null;
+
+    const startButton = document.getElementById('start-button');
+    const stopButton = document.getElementById('stop-button');
+
+    startButton.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        source = audioContext.createMediaStreamSource(stream);
+
+        // Connect to speakers or headphones
+        source.connect(audioContext.destination);
+
+        startButton.disabled = true;
+        stopButton.disabled = false;
+
+        console.log("Audio stream started.");
+      } catch (error) {
+        console.error("Error accessing audio input:", error);
+        alert("Could not start audio. Please check input permissions and device.");
+      }
+    });
+
+    stopButton.addEventListener('click', () => {
+      if (source) {
+        source.disconnect();
+        source = null;
+      }
+
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+
+      startButton.disabled = false;
+      stopButton.disabled = true;
+
+      console
